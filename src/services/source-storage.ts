@@ -1,4 +1,11 @@
 import type { ApiSource } from "../lib/types";
+
+function generateId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 import { DEFAULT_SOURCE, STORAGE_KEYS } from "../lib/constants";
 
 export const sourceStorage = {
@@ -20,7 +27,7 @@ export const sourceStorage = {
     const sources = this.getSources();
     const newSource: ApiSource = {
       ...source,
-      id: crypto.randomUUID(),
+      id: generateId(),
       addedAt: new Date().toISOString(),
     };
     sources.push(newSource);
