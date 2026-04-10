@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, Check, Star, GripVertical } from "lucide-react";
+import { Plus, Trash2, Check, Star, GripVertical, Download, Upload } from "lucide-react";
 import { Modal } from "../ui/Modal";
 import { useSource } from "../../providers/SourceProvider";
+import { STORAGE_KEYS } from "../../lib/constants";
 
 interface SourceSettingsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function SourceSettingsModal({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragItemRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setNewName("");
@@ -98,6 +100,64 @@ export function SourceSettingsModal({
     if (e.key === "Escape") resetForm();
   };
 
+  const handleExport = () => {
+    const data = {
+      _meta: "vanessa-vod-sources",
+      version: 1,
+      activeSourceId: activeSource.id,
+      sources: sources,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vanessa-vod-sources-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        const items = data.sources || data;
+        if (!Array.isArray(items)) {
+          setError("无效的配置文件格式");
+          return;
+        }
+        let imported = 0;
+        for (const item of items) {
+          if (!item.name || !item.url) continue;
+          const exists = sources.some((s) => s.url === item.url);
+          if (!exists) {
+            addSource({
+              name: item.name,
+              url: item.url,
+              enabled: item.enabled ?? true,
+            });
+            imported++;
+          }
+        }
+        if (data.activeSourceId) {
+          localStorage.setItem(STORAGE_KEYS.ACTIVE_SOURCE_ID, data.activeSourceId);
+        }
+        if (imported === 0) {
+          setError("所有源已存在，无需导入");
+        } else {
+          setError("");
+        }
+      } catch {
+        setError("无法解析配置文件");
+      }
+      // reset file input
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.readAsText(file);
+  };
+
   const onDragStart = (index: number) => {
     dragItemRef.current = index;
     setDragIndex(index);
@@ -131,6 +191,31 @@ export function SourceSettingsModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="源设置">
       <div className="space-y-4">
+        {/* Import / Export */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm hover:bg-[var(--color-border)] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            导出配置
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm hover:bg-[var(--color-border)] transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            导入配置
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </div>
+
         <div className="space-y-2">
           <input
             type="text"
