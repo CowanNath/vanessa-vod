@@ -1,0 +1,12 @@
+services:
+  vanessa-vod:
+    build: .
+    container_name: vanessa-vod
+    ports:
+      - "8608:8608"
+    volumes:
+      - downloads:/app/downloads
+    restart: unless-stopped
+
+volumes:
+  downloads:

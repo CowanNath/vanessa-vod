@@ -5,7 +5,12 @@
       "WebSearch",
       "Bash(npm -v)",
       "Bash(npx next:*)",
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-import-alias --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-import-alias --yes)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Cowan\\Desktop\\code\\ui-ux-pro-max-temp\\src\\app\\video"
     ]
   }
 }

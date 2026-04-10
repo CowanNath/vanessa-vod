@@ -36,6 +36,19 @@ yarn-error.log*
 # vercel
 .vercel
 
+# downloads
+/downloads/
+
+# logs
+/Logs/
+
+# executables
+*.exe
+
+# claude local
+.claude/settings.local.json
+skills-lock.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
