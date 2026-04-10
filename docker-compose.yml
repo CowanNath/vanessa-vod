@@ -6,7 +6,9 @@ services:
       - "8608:8608"
     volumes:
       - downloads:/app/downloads
+      - app-data:/app/data
     restart: unless-stopped
 
 volumes:
   downloads:
+  app-data:

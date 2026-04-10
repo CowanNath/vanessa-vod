@@ -13,22 +13,32 @@ import {
 import type { ApiSource, CategoryItem, CategoryTreeNode } from "../lib/types";
 import { sourceStorage } from "../services/source-storage";
 import { VodApiService } from "../services/vod-api";
-import { DEFAULT_SOURCE } from "../lib/constants";
+import { DEFAULT_SOURCE, STORAGE_KEYS } from "../lib/constants";
 
-function initSourcesFromUrl(): void {
-  if (typeof window === "undefined") return;
-  const params = new URLSearchParams(window.location.search);
-  const sourceParam = params.get("source");
-  if (!sourceParam) return;
-  const sources = sourceStorage.getSources();
-  const parts = sourceParam.split(",");
-  if (parts.length < 2) return;
-  const name = parts.slice(0, -1).join(",").trim();
-  const url = parts[parts.length - 1].trim();
-  if (!name || !url) return;
-  const exists = sources.some((s) => s.url === url);
-  if (!exists) {
-    sourceStorage.addSource({ name, url, enabled: true });
+interface SourcesData {
+  sources: ApiSource[];
+  activeSourceId: string;
+}
+
+async function fetchServerSources(): Promise<SourcesData | null> {
+  try {
+    const res = await fetch("/api/sources");
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function syncToServer(sources: ApiSource[], activeSourceId: string) {
+  try {
+    await fetch("/api/sources", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sources, activeSourceId }),
+    });
+  } catch {
+    // silently fail - localStorage is the fallback
   }
 }
 
@@ -58,12 +68,25 @@ export function SourceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true;
-    initSourcesFromUrl();
-    const storedSources = sourceStorage.getSources();
-    setSources(storedSources);
-    const activeId = sourceStorage.getActiveSourceId();
-    const active = storedSources.find((s) => s.id === activeId);
-    if (active) setActiveSourceState(active);
+
+    (async () => {
+      // try server first
+      const serverData = await fetchServerSources();
+      if (serverData && serverData.sources.length > 0) {
+        // merge: server wins, update localStorage
+        sourceStorage.saveSources(serverData.sources);
+        if (serverData.activeSourceId) {
+          sourceStorage.setActiveSourceId(serverData.activeSourceId);
+        }
+      }
+
+      const storedSources = sourceStorage.getSources();
+      if (mountedRef.current) setSources(storedSources);
+      const activeId = sourceStorage.getActiveSourceId();
+      const active = storedSources.find((s) => s.id === activeId);
+      if (active && mountedRef.current) setActiveSourceState(active);
+    })();
+
     return () => {
       mountedRef.current = false;
     };
@@ -106,7 +129,9 @@ export function SourceProvider({ children }: { children: ReactNode }) {
   const addSource = useCallback(
     (source: Omit<ApiSource, "id" | "addedAt">) => {
       sourceStorage.addSource(source);
-      setSources(sourceStorage.getSources());
+      const updated = sourceStorage.getSources();
+      setSources(updated);
+      syncToServer(updated, sourceStorage.getActiveSourceId());
     },
     []
   );
@@ -120,18 +145,20 @@ export function SourceProvider({ children }: { children: ReactNode }) {
       sourceStorage.setActiveSourceId(updated[0].id);
       setActiveSourceState(updated[0]);
     }
+    syncToServer(updated, sourceStorage.getActiveSourceId());
   }, []);
 
   const reorderSource = useCallback((fromIndex: number, toIndex: number) => {
     sourceStorage.reorderSources(fromIndex, toIndex);
-    setSources(sourceStorage.getSources());
+    const updated = sourceStorage.getSources();
+    setSources(updated);
+    syncToServer(updated, sourceStorage.getActiveSourceId());
   }, []);
 
   const toggleSource = useCallback((id: string) => {
     sourceStorage.toggleSource(id);
     const updated = sourceStorage.getSources();
     setSources(updated);
-    // 如果关闭的是当前激活的源，切换到第一个启用的源
     const currentActiveId = sourceStorage.getActiveSourceId();
     if (currentActiveId === id) {
       const next = updated.find((s) => s.enabled);
@@ -140,6 +167,7 @@ export function SourceProvider({ children }: { children: ReactNode }) {
         setActiveSourceState(next);
       }
     }
+    syncToServer(updated, sourceStorage.getActiveSourceId());
   }, []);
 
   const setActiveSource = useCallback((id: string) => {
@@ -147,6 +175,7 @@ export function SourceProvider({ children }: { children: ReactNode }) {
     const allSources = sourceStorage.getSources();
     const source = allSources.find((s) => s.id === id);
     if (source) setActiveSourceState(source);
+    syncToServer(allSources, id);
   }, []);
 
   return (
