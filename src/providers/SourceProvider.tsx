@@ -13,6 +13,24 @@ import {
 import type { ApiSource, CategoryItem, CategoryTreeNode } from "../lib/types";
 import { sourceStorage } from "../services/source-storage";
 import { VodApiService } from "../services/vod-api";
+import { DEFAULT_SOURCE } from "../lib/constants";
+
+function initSourcesFromUrl(): void {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  const sourceParam = params.get("source");
+  if (!sourceParam) return;
+  const sources = sourceStorage.getSources();
+  const parts = sourceParam.split(",");
+  if (parts.length < 2) return;
+  const name = parts.slice(0, -1).join(",").trim();
+  const url = parts[parts.length - 1].trim();
+  if (!name || !url) return;
+  const exists = sources.some((s) => s.url === url);
+  if (!exists) {
+    sourceStorage.addSource({ name, url, enabled: true });
+  }
+}
 
 interface SourceContextValue {
   sources: ApiSource[];
@@ -40,6 +58,7 @@ export function SourceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true;
+    initSourcesFromUrl();
     const storedSources = sourceStorage.getSources();
     setSources(storedSources);
     const activeId = sourceStorage.getActiveSourceId();
