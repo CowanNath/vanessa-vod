@@ -58,7 +58,7 @@ export default function FavoritesPage() {
                 {/* Remove button */}
                 <button
                   onClick={() => handleRemove(item.vodId, item.sourceId)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/40 backdrop-blur-sm text-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-red-500 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                 >
                   <Heart className="w-3.5 h-3.5 fill-red-500" />
                 </button>

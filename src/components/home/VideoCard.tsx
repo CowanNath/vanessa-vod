@@ -27,7 +27,7 @@ export function VideoCard({ video }: VideoCardProps) {
               alt={video.vod_name}
               fill
               className="object-contain transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 14vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 20vw, 14vw"
               unoptimized
             />
           ) : (

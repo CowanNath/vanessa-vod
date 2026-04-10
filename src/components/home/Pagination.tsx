@@ -41,9 +41,9 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-5 h-5 sm:w-4 sm:h-4" />
       </button>
       {getVisiblePages().map((page, i) =>
         page === "..." ? (
@@ -55,7 +55,7 @@ export function Pagination({
             key={page}
             onClick={() => onPageChange(page as number)}
             className={cn(
-              "w-8 h-8 rounded-lg text-sm transition-colors",
+              "w-9 h-9 sm:w-8 sm:h-8 rounded-lg text-sm transition-colors",
               currentPage === page
                 ? "bg-primary text-white font-medium"
                 : "hover:bg-[var(--color-bg-secondary)]"
@@ -68,9 +68,9 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-5 h-5 sm:w-4 sm:h-4" />
       </button>
     </div>
   );
