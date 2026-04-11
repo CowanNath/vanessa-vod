@@ -43,17 +43,18 @@ export function DownloadButton({ videoName, sources }: DownloadButtonProps) {
           const data = JSON.parse(line.slice(6));
           if (data.type === "progress") {
             setProgress(`${data.name}: ${data.percent.toFixed(1)}%`);
-          } else if (data.type === "log") {
           } else if (data.type === "done") {
             if (!data.success) {
-              throw new Error(data.message);
+              throw new Error(data.message || "下载失败");
             }
             return true;
           }
-        } catch {}
+        } catch (e) {
+          if (e instanceof Error) throw e;
+        }
       }
     }
-    return true;
+    throw new Error("下载异常结束：未收到完成信号");
   };
 
   const handleDownload = async () => {

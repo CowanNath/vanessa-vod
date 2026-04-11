@@ -51,16 +51,16 @@ function buildFFmpegArgs(url: string, outputPath: string, headerStr: string): st
   // input
   args.push("-i", url);
 
+  // progress & log level (must be before output)
+  args.push("-progress", "pipe:2");
+  args.push("-loglevel", "info");
+
   // output: copy streams, no re-encode
   args.push("-c", "copy");
   args.push("-y");
   args.push("-movflags", "+faststart");
   args.push("-threads", "8");
   args.push(outputPath);
-
-  // progress via stderr (pipe:1 goes to stdout but conflicts with -c copy)
-  args.push("-progress", "pipe:2");
-  args.push("-loglevel", "info");
 
   return args;
 }
