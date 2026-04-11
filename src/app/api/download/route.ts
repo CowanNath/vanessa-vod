@@ -81,10 +81,10 @@ export async function POST(request: NextRequest): Promise<Response> {
   const outputPath = path.join(saveDir, `${safeName}.mp4`);
 
   console.log(`[download] START id=${downloadId} name="${safeName}" output=${outputPath}`);
-  console.log(`[download] CMD   ffmpeg ${buildFFmpegArgs(url, outputPath, headerStr).join(" ")}`);
 
   const parsed = new URL(url);
   const headerStr = `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36\r\nReferer: ${parsed.origin}/\r\n`;
+  console.log(`[download] CMD   ffmpeg ${buildFFmpegArgs(url, outputPath, headerStr).join(" ")}`);
 
   let ctrl: ReadableStreamDefaultController;
   const stream = new ReadableStream({ start(c) { ctrl = c; } });
