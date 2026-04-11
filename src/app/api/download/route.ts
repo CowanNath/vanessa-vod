@@ -80,6 +80,8 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir, { recursive: true });
   const outputPath = path.join(saveDir, `${safeName}.mp4`);
 
+  console.log(`[download] START id=${downloadId} name="${safeName}" output=${outputPath}`);
+
   const parsed = new URL(url);
   const headerStr = `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36\r\nReferer: ${parsed.origin}/\r\n`;
 
@@ -135,11 +137,15 @@ export async function POST(request: NextRequest): Promise<Response> {
     proc.on("close", (code) => {
       activeDownloads.delete(downloadId);
       if (ctx.cancelled) {
+        console.log(`[download] CANCELLED id=${downloadId} name="${safeName}"`);
         try { ctrl.close(); } catch {}
         return;
       }
       if (code !== 0) {
+        console.error(`[download] FAILED id=${downloadId} name="${safeName}" exitCode=${code}`);
         cleanupFiles(safeName, [process.cwd(), saveDir]);
+      } else {
+        console.log(`[download] DONE id=${downloadId} name="${safeName}" path=${outputPath}`);
       }
       const success = code === 0;
       sendDone(success, success ? "下载完成" : `下载失败 (exit code: ${code})`);
@@ -147,6 +153,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     proc.on("error", (err) => {
       activeDownloads.delete(downloadId);
+      console.error(`[download] ERROR id=${downloadId} name="${safeName}" error=${err.message}`);
       if (ctx.cancelled) {
         try { ctrl.close(); } catch {}
         return;
@@ -171,6 +178,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
 
   const ctx = activeDownloads.get(id)!;
   ctx.cancelled = true;
+  console.log(`[download] CANCEL id=${id} name="${ctx.safeName}"`);
 
   if (!ctx.proc.killed) {
     ctx.proc.kill("SIGKILL");
