@@ -107,7 +107,7 @@ export default function VideoDetailPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <main className="p-4 max-w-5xl mx-auto w-full">
+        <main className="p-2 sm:p-4 max-w-5xl mx-auto w-full">
           <Skeleton className="aspect-video w-full rounded-lg mb-6" />
           <div className="flex gap-6">
             <Skeleton className="w-48 aspect-[2/3] rounded-lg shrink-0 hidden md:block" />
@@ -150,7 +150,7 @@ export default function VideoDetailPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="p-4 max-w-5xl mx-auto w-full space-y-6">
+      <main className="p-2 sm:p-4 max-w-5xl mx-auto w-full space-y-4 sm:space-y-6">
         {/* Back button */}
         <Link
           href="/"
@@ -161,9 +161,9 @@ export default function VideoDetailPage() {
         </Link>
 
         {/* Title + Favorite */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{video.vod_name}</h1>
+        <div className="flex items-start justify-between gap-2 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">{video.vod_name}</h1>
             {video.vod_remarks && (
               <span className="inline-block mt-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                 {video.vod_remarks}

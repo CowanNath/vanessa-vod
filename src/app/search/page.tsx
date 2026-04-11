@@ -166,7 +166,7 @@ function SearchResults() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="p-4 max-w-7xl mx-auto w-full">
+      <main className="p-2 sm:p-4 max-w-7xl mx-auto w-full">
         <h1 className="text-lg font-semibold mb-4">
           {keyword ? (
             <>
@@ -255,7 +255,7 @@ export default function SearchPage() {
       fallback={
         <div className="flex flex-col min-h-screen">
           <Header />
-          <main className="p-4 max-w-7xl mx-auto w-full">
+          <main className="p-2 sm:p-4 max-w-7xl mx-auto w-full">
             <VideoGridSkeleton />
           </main>
         </div>

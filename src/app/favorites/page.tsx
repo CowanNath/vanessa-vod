@@ -26,7 +26,7 @@ export default function FavoritesPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="p-4 max-w-7xl mx-auto w-full">
+      <main className="p-2 sm:p-4 max-w-7xl mx-auto w-full">
         <h1 className="text-lg font-semibold mb-4">我的收藏</h1>
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[var(--color-text-secondary)]">

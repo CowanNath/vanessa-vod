@@ -10,7 +10,7 @@ export function ThemeToggle() {
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="w-9 h-9" />;
+  if (!mounted) return <div className="w-8 h-8 sm:w-9 sm:h-9" />;
 
   const cycleTheme = () => {
     const modes = ["light", "dark", "system"] as const;
@@ -20,9 +20,9 @@ export function ThemeToggle() {
   };
 
   const icons: Record<string, React.ReactNode> = {
-    light: <Sun className="w-5 h-5" />,
-    dark: <Moon className="w-5 h-5" />,
-    system: <Monitor className="w-5 h-5" />,
+    light: <Sun className="w-4.5 h-4.5 sm:w-5 sm:h-5" />,
+    dark: <Moon className="w-4.5 h-4.5 sm:w-5 sm:h-5" />,
+    system: <Monitor className="w-4.5 h-4.5 sm:w-5 sm:h-5" />,
   };
 
   const labels: Record<string, string> = {
@@ -34,10 +34,10 @@ export function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
+      className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
       title={`当前主题: ${labels[theme || "system"]}`}
     >
-      {icons[theme || "system"] || <Monitor className="w-5 h-5" />}
+      {icons[theme || "system"] || <Monitor className="w-4.5 h-4.5 sm:w-5 sm:h-5" />}
     </button>
   );
 }

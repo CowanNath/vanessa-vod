@@ -25,13 +25,13 @@ export function VideoMeta({ video }: VideoMetaProps) {
   ].filter((item) => item.value);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5 sm:space-y-2">
       {items.map((item) => (
-        <div key={item.label} className="flex gap-2 text-sm">
+        <div key={item.label} className="flex gap-1.5 sm:gap-2 text-xs sm:text-sm">
           <span className="text-[var(--color-text-secondary)] shrink-0">
             {item.label}:
           </span>
-          <span className="text-[var(--color-text-primary)] break-all">
+          <span className="text-[var(--color-text-primary)] break-all leading-relaxed">
             {item.value}
           </span>
         </div>

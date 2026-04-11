@@ -7,7 +7,7 @@ export function SourceSelector() {
   const { sources, activeSource, setActiveSource } = useSource();
 
   return (
-    <div className="flex items-center gap-1.5 px-4 py-2 overflow-x-auto border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+    <div className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 overflow-x-auto border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
       <div className="flex gap-1.5">
         {sources.filter((s) => s.enabled).map((source) => (
           <button

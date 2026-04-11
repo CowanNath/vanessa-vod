@@ -41,7 +41,7 @@ export default function HomePage() {
           selectedTypeId={selectedTypeId}
           onSelectType={handleSelectType}
         />
-        <main className="flex-1 p-4 overflow-auto">
+        <main className="flex-1 p-2 sm:p-4 overflow-auto">
           {error ? (
             <div className="flex flex-col items-center justify-center py-20 text-[var(--color-text-secondary)]">
               <p className="mb-2">{error}</p>
