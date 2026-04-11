@@ -49,6 +49,7 @@ function buildFFmpegArgs(url: string, outputPath: string, headerStr: string): st
   args.push("-reconnect_delay_max", "5");
 
   // input
+  args.push("-allowed_extensions", "ALL");
   args.push("-i", url);
 
   // progress & log level (must be before output)
