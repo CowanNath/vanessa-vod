@@ -48,7 +48,8 @@ function buildFFmpegArgs(url: string, outputPath: string, headerStr: string): st
   args.push("-reconnect_streamed", "1");
   args.push("-reconnect_delay_max", "5");
 
-  // input
+  // input: force HLS format and allow all segment extensions
+  args.push("-f", "hls");
   args.push("-allowed_extensions", "ALL");
   args.push("-i", url);
 
