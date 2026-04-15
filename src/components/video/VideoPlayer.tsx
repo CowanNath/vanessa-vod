@@ -53,6 +53,10 @@ export function VideoPlayer({ url, poster, onError }: VideoPlayerProps) {
               maxBufferLength: 30,
               maxMaxBufferLength: 60,
               startLevel: -1,
+              enableWorker: true,
+              maxBufferHole: 0.5,
+              backBufferLength: 90,
+              lowLatencyMode: false,
             });
             hls.loadSource(artUrl);
             hls.attachMedia(video);

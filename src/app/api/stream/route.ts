@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     }
 
     let contentType = response.headers.get("content-type") || "application/octet-stream";
-    const buffer = await response.arrayBuffer();
 
     // 如果是 .ts 文件，强制设置正确的 Content-Type
     if (streamUrl.toLowerCase().split('?')[0].endsWith(".ts")) {
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
     const ct = contentType.toLowerCase();
     // If this is an m3u8 playlist, rewrite URLs to go through our proxy
     if (ct.includes("mpegurl") || ct.includes("m3u8") || streamUrl.split('?')[0].endsWith(".m3u8")) {
-      const text = new TextDecoder().decode(buffer);
+      const text = await response.text();
       const baseUrl = streamUrl.substring(0, streamUrl.lastIndexOf("/") + 1);
       
       const rewritten = text
@@ -86,7 +85,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return new NextResponse(buffer, {
+    // 媒体分段：流式转发，避免全量缓冲导致延迟和音画不同步
+    return new NextResponse(response.body, {
       status: 200,
       headers: {
         "Content-Type": contentType,
