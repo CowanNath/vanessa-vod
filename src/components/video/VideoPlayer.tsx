@@ -92,7 +92,7 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
       customType: {
         m3u8: function (video, artUrl, art) {
           if (Hls.isSupported()) {
-            const artAny = art as Record<string, unknown>;
+            const artAny = art as unknown as Record<string, unknown>;
             if (artAny.hls) {
               (artAny.hls as Hls).destroy();
             }
