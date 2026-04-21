@@ -12,7 +12,9 @@ export default function FavoritesPage() {
   const [items, setItems] = useState<FavoriteItem[]>([]);
 
   useEffect(() => {
-    setItems(favoriteStorage.getAll());
+    favoriteStorage.loadFromServer().then(() => {
+      setItems(favoriteStorage.getAll());
+    });
   }, []);
 
   const handleRemove = (vodId: number, sourceId: string) => {

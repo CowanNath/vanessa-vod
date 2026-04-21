@@ -28,7 +28,9 @@ export function FavoriteButton({
   const [isFav, setIsFav] = useState(false);
 
   useEffect(() => {
-    setIsFav(favoriteStorage.isFavorite(vodId, sourceId));
+    favoriteStorage.loadFromServer().then(() => {
+      setIsFav(favoriteStorage.isFavorite(vodId, sourceId));
+    });
   }, [vodId, sourceId]);
 
   const handleClick = (e: React.MouseEvent) => {

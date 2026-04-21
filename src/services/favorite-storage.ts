@@ -26,6 +26,11 @@ export const favoriteStorage = {
     if (items.some((f) => f.vodId === item.vodId && f.sourceId === item.sourceId)) return;
     items.unshift({ ...item, addedAt: new Date().toISOString() });
     this.save(items);
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item),
+    }).catch(() => {});
   },
 
   remove(vodId: number, sourceId: string): void {
@@ -33,6 +38,11 @@ export const favoriteStorage = {
       (f) => !(f.vodId === vodId && f.sourceId === sourceId)
     );
     this.save(items);
+    fetch("/api/favorites", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vodId, sourceId }),
+    }).catch(() => {});
   },
 
   isFavorite(vodId: number, sourceId: string): boolean {
@@ -48,5 +58,16 @@ export const favoriteStorage = {
     }
     this.add(item);
     return true;
+  },
+
+  async loadFromServer(): Promise<void> {
+    try {
+      const res = await fetch("/api/favorites");
+      if (!res.ok) return;
+      const serverItems: FavoriteItem[] = await res.json();
+      if (serverItems.length > 0) {
+        this.save(serverItems);
+      }
+    } catch {}
   },
 };
