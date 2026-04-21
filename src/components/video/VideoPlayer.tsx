@@ -123,12 +123,13 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
                       html: `${level.height}p`,
                     })),
                   ],
-                  onSelect(item: { html: string }) {
-                    if (item.html === "自动") {
+                  onSelect(item) {
+                    const label = typeof item.html === "string" ? item.html : "";
+                    if (label === "自动") {
                       hls.currentLevel = -1;
                     } else {
                       for (let i = 0; i < levels.length; i++) {
-                        if (`${levels[i].height}p` === item.html) {
+                        if (`${levels[i].height}p` === label) {
                           hls.currentLevel = i;
                           break;
                         }
@@ -159,7 +160,7 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
     artInstanceRef.current = art;
 
     art.on("video:play", () => {
-      void (art as Record<string, unknown>).promise;
+      void (art as unknown as Record<string, unknown>).promise;
     });
 
     art.on("video:error", () => {
