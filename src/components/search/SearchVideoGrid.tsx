@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { Skeleton } from "../ui/Skeleton";
 import { ImageWithFallback } from "../ui/ImageWithFallback";
+import { imageProxy } from "../../lib/utils";
 import type { VodItem } from "../../lib/types";
-
-function imageProxy(url: string): string {
-  return `/api/image?url=${encodeURIComponent(url)}`;
-}
 
 export function SearchGridSkeleton() {
   return (
@@ -46,7 +43,7 @@ export function SearchVideoGrid({ videos, sourceId }: { videos: VodItem[]; sourc
                 src={imageProxy(video.vod_pic)}
                 alt={video.vod_name}
                 fill
-                className="object-contain transition-transform duration-300 group-hover:scale-105"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                 unoptimized
               />

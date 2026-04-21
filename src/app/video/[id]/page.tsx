@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import DOMPurify from "dompurify";
 import { ArrowLeft } from "lucide-react";
@@ -12,15 +11,12 @@ import { EpisodeList } from "../../../components/video/EpisodeList";
 import { VideoMeta } from "../../../components/video/VideoMeta";
 import { FavoriteButton } from "../../../components/favorite/FavoriteButton";
 import { DownloadButton } from "../../../components/video/DownloadButton";
+import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
 import { useSource } from "../../../providers/SourceProvider";
-import { parsePlaySources } from "../../../lib/utils";
+import { parsePlaySources, imageProxy } from "../../../lib/utils";
 import { VodApiService } from "../../../services/vod-api";
 import type { VodItem } from "../../../lib/types";
 import { Skeleton } from "../../../components/ui/Skeleton";
-
-function imageProxy(url: string): string {
-  return `/api/image?url=${encodeURIComponent(url)}`;
-}
 
 export default function VideoDetailPage() {
   const params = useParams();
@@ -147,6 +143,24 @@ export default function VideoDetailPage() {
   const sources = parsePlaySources(video.vod_play_from, video.vod_play_url);
   const sanitizedContent = DOMPurify.sanitize(video.vod_content);
 
+  const currentEpisode = (() => {
+    for (const s of sources) {
+      const idx = s.episodes.findIndex((e) => e.url === currentUrl);
+      if (idx !== -1) return { source: s, index: idx };
+    }
+    return null;
+  })();
+
+  const hasNextEpisode = currentEpisode
+    ? currentEpisode.index < currentEpisode.source.episodes.length - 1
+    : false;
+
+  const handleNextEpisode = () => {
+    if (!currentEpisode) return;
+    const nextEp = currentEpisode.source.episodes[currentEpisode.index + 1];
+    if (nextEp) setCurrentUrl(nextEp.url);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -186,8 +200,10 @@ export default function VideoDetailPage() {
         {currentUrl && (
           <VideoPlayer 
             url={currentUrl} 
-            poster={video.vod_pic} 
+            poster={imageProxy(video.vod_pic)} 
             onError={handlePlayerError}
+            onNextEpisode={handleNextEpisode}
+            hasNextEpisode={hasNextEpisode}
           />
         )}
 
@@ -205,7 +221,7 @@ export default function VideoDetailPage() {
           {video.vod_pic && (
             <div className="shrink-0 hidden md:block">
               <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden bg-[var(--color-bg-secondary)]">
-                <Image
+                <ImageWithFallback
                   src={imageProxy(video.vod_pic)}
                   alt={video.vod_name}
                   fill

@@ -75,3 +75,45 @@ body {
   border-radius: 0.5rem;
   overflow: hidden;
 }
+
+.art-video-player .art-progress {
+  touch-action: none;
+}
+
+.art-video-player .art-control-hover {
+  touch-action: manipulation;
+}
+
+.art-fullscreen-web .art-video-player,
+.art-fullscreen .art-video-player {
+  border-radius: 0;
+}
+
+@media (max-width: 768px) {
+  .art-video-player .art-bottom {
+    padding: 0 4px;
+  }
+
+  .art-video-player .art-controls {
+    gap: 2px;
+  }
+
+  .art-video-player .art-progress {
+    height: 8px;
+    margin-bottom: 2px;
+  }
+
+  .art-video-player .art-progress:hover {
+    height: 10px;
+  }
+
+  .art-video-player .art-control-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .art-video-player .art-time,
+  .art-video-player .art-controls-right .art-control-time {
+    font-size: 12px;
+  }
+}

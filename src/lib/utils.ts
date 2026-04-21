@@ -36,6 +36,10 @@ function parseEpisodes(playUrl: string): Episode[] {
     });
 }
 
+export function imageProxy(url: string): string {
+  return `/api/image?url=${encodeURIComponent(url)}`;
+}
+
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";

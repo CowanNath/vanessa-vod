@@ -4,17 +4,15 @@ import Link from "next/link";
 import { FavoriteButton } from "../favorite/FavoriteButton";
 import { ImageWithFallback } from "../ui/ImageWithFallback";
 import { useSource } from "../../providers/SourceProvider";
+import { imageProxy } from "../../lib/utils";
 import type { VodItem } from "../../lib/types";
-
-function imageProxy(url: string): string {
-  return `/api/image?url=${encodeURIComponent(url)}`;
-}
 
 interface VideoCardProps {
   video: VodItem;
+  priority?: boolean;
 }
 
-export function VideoCard({ video }: VideoCardProps) {
+export function VideoCard({ video, priority }: VideoCardProps) {
   const { activeSource } = useSource();
 
   return (
@@ -26,8 +24,9 @@ export function VideoCard({ video }: VideoCardProps) {
               src={imageProxy(video.vod_pic)}
               alt={video.vod_name}
               fill
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 20vw, 14vw"
+              priority={priority}
               unoptimized
             />
           ) : (

@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Header } from "../../components/layout/Header";
+import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
 import { favoriteStorage, type FavoriteItem } from "../../services/favorite-storage";
-
-function imageProxy(url: string): string {
-  return `/api/image?url=${encodeURIComponent(url)}`;
-}
+import { imageProxy } from "../../lib/utils";
 
 export default function FavoritesPage() {
   const [items, setItems] = useState<FavoriteItem[]>([]);
@@ -40,11 +37,11 @@ export default function FavoritesPage() {
                 <Link href={`/video/${item.vodId}`} className="block">
                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-[var(--color-bg-secondary)]">
                     {item.vodPic ? (
-                      <Image
+                      <ImageWithFallback
                         src={imageProxy(item.vodPic)}
                         alt={item.vodName}
                         fill
-                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                         unoptimized
                       />

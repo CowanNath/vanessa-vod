@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const IMAGE_TIMEOUT = 8000; // 8s
+const IMAGE_TIMEOUT = 8000;
+const CONTENT_TYPE_MAP: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
+};
+
+function guessContentType(url: string): string {
+  const path = url.split("?")[0].split("#")[0].toLowerCase();
+  const ext = path.split(".").pop() || "";
+  return CONTENT_TYPE_MAP[ext] || "image/jpeg";
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -9,8 +25,6 @@ export async function GET(request: NextRequest) {
   if (!imageUrl) {
     return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
   }
-
-  console.log(`[image] fetching: ${imageUrl}`);
 
   try {
     const controller = new AbortController();
@@ -26,16 +40,16 @@ export async function GET(request: NextRequest) {
     clearTimeout(timer);
 
     if (!response.ok) {
-      console.warn(`[image] upstream ${response.status}: ${imageUrl}`);
       return new NextResponse("Image fetch failed", { status: response.status });
     }
 
-    const contentType = response.headers.get("content-type") || "image/webp";
-    const buffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || guessContentType(imageUrl);
 
-    console.log(`[image] ok ${buffer.byteLength}B ${contentType}: ${imageUrl}`);
+    if (!response.body) {
+      return NextResponse.json({ error: "No response body" }, { status: 502 });
+    }
 
-    return new NextResponse(buffer, {
+    return new NextResponse(response.body, {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -45,7 +59,6 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     const isTimeout = msg.includes("abort") || msg.includes("timeout");
-    console.warn(`[image] ${isTimeout ? "timeout" : "error"}: ${msg} — ${imageUrl}`);
     return NextResponse.json(
       { error: isTimeout ? "图片加载超时" : "图片加载失败" },
       { status: 502 }
