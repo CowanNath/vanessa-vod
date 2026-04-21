@@ -71,10 +71,10 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
       },
       moreVideoAttr: {
         "webkit-playsinline": true,
-        "playsinline": true,
+        playsinline: true,
         "x5-playsinline": true,
         "x5-video-player-type": "h5",
-      },
+      } as Record<string, boolean | string>,
       controls: hasNextEpisode && onNextEpisode
         ? [
             {
