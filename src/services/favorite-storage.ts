@@ -10,6 +10,22 @@ export interface FavoriteItem {
   addedAt: string;
 }
 
+// 合并本地与服务端收藏（按 vodId+sourceId 去重，保留 addedAt 较新的，按时间倒序）
+function mergeItems(local: FavoriteItem[], server: FavoriteItem[]): FavoriteItem[] {
+  const map = new Map<string, FavoriteItem>();
+  for (const item of [...local, ...server]) {
+    const key = `${item.vodId}-${item.sourceId}`;
+    const existing = map.get(key);
+    if (!existing || item.addedAt > existing.addedAt) {
+      map.set(key, item);
+    }
+  }
+  return [...map.values()].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+}
+
+// 全站共享一次服务端拉取，避免每个 FavoriteButton 挂载都请求一遍
+let serverSyncPromise: Promise<void> | null = null;
+
 export const favoriteStorage = {
   getAll(): FavoriteItem[] {
     if (typeof window === "undefined") return [];
@@ -61,13 +77,17 @@ export const favoriteStorage = {
   },
 
   async loadFromServer(): Promise<void> {
-    try {
-      const res = await fetch("/api/favorites");
-      if (!res.ok) return;
-      const serverItems: FavoriteItem[] = await res.json();
-      if (serverItems.length > 0) {
-        this.save(serverItems);
-      }
-    } catch {}
+    if (!serverSyncPromise) {
+      serverSyncPromise = (async () => {
+        try {
+          const res = await fetch("/api/favorites");
+          if (!res.ok) return;
+          const serverItems: FavoriteItem[] = await res.json();
+          if (!Array.isArray(serverItems)) return;
+          this.save(mergeItems(this.getAll(), serverItems));
+        } catch {}
+      })();
+    }
+    return serverSyncPromise;
   },
 };

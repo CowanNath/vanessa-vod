@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@types/dompurify": "^3.0.5",
     "artplayer": "^5.4.0",
     "dompurify": "^3.3.3",
     "hls.js": "^1.6.15",

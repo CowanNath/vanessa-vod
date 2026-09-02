@@ -22,10 +22,15 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
   const artRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<Artplayer | null>(null);
   const onNextRef = useRef(onNextEpisode);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     onNextRef.current = onNextEpisode;
   }, [onNextEpisode]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const isMobile = useCallback(() => {
     if (typeof window === "undefined") return false;
@@ -42,11 +47,22 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
 
     const proxyUrl = streamProxy(url);
     const mobile = isMobile();
+    // hls.js 只吃 m3u8；mp4 等直链交给浏览器原生播放（配合 stream 代理的 Range 透传可 seek）
+    const nativeFormat = /\.(mp4|webm|mkv|flv|mov)(\?|$)/i.test(url);
+
+    // 同一播放器实例只上报一次错误：hls fatal 与 video:error 可能对同一次失败同时触发，
+    // 去重后上层换线逻辑才不会因为重复回调而跳线
+    let reportedError = false;
+    const reportError = () => {
+      if (reportedError) return;
+      reportedError = true;
+      onErrorRef.current?.();
+    };
 
     const art = new Artplayer({
       container: artRef.current,
       url: proxyUrl,
-      type: "m3u8",
+      type: nativeFormat ? "mp4" : "m3u8",
       poster: poster || "",
       volume: 0.7,
       autoplay: false,
@@ -89,7 +105,9 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
             },
           ]
         : [],
-      customType: {
+      customType: nativeFormat
+        ? {}
+        : {
         m3u8: function (video, artUrl, art) {
           if (Hls.isSupported()) {
             const artAny = art as unknown as Record<string, unknown>;
@@ -142,7 +160,7 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
 
             hls.on(Hls.Events.ERROR, (_event, data) => {
               if (data.fatal) {
-                onError?.();
+                reportError();
               }
             });
 
@@ -151,7 +169,7 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
             });
           } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
             video.src = artUrl;
-            video.addEventListener("error", () => onError?.());
+            video.addEventListener("error", () => reportError());
           }
         },
       },
@@ -164,7 +182,7 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
     });
 
     art.on("video:error", () => {
-      onError?.();
+      reportError();
     });
 
     return () => {
@@ -176,7 +194,9 @@ export function VideoPlayer({ url, poster, onError, onNextEpisode, hasNextEpisod
         artInstanceRef.current = null;
       }
     };
-  }, [url, poster, onError, hasNextEpisode, onNextEpisode, isMobile]);
+    // 回调经 ref 转发，父组件重渲染时不必销毁重建播放器
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, poster, isMobile]);
 
   return (
     <div

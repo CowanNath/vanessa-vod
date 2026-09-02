@@ -13,7 +13,7 @@ import {
 import type { ApiSource, CategoryItem, CategoryTreeNode } from "../lib/types";
 import { sourceStorage } from "../services/source-storage";
 import { VodApiService } from "../services/vod-api";
-import { DEFAULT_SOURCE, STORAGE_KEYS } from "../lib/constants";
+import { DEFAULT_SOURCE } from "../lib/constants";
 
 interface SourcesData {
   sources: ApiSource[];
@@ -48,6 +48,7 @@ interface SourceContextValue {
   apiService: VodApiService;
   categories: CategoryTreeNode[];
   addSource: (source: Omit<ApiSource, "id" | "addedAt">) => void;
+  updateSource: (id: string, patch: { name?: string; url?: string; enabled?: boolean }) => void;
   removeSource: (id: string) => void;
   reorderSource: (fromIndex: number, toIndex: number) => void;
   toggleSource: (id: string) => void;
@@ -59,9 +60,8 @@ const SourceContext = createContext<SourceContextValue | null>(null);
 
 export function SourceProvider({ children }: { children: ReactNode }) {
   const [sources, setSources] = useState<ApiSource[]>([]);
-  const [activeSource, setActiveSourceState] = useState<ApiSource>(
-    sourceStorage.getActiveSource()
-  );
+  // 首帧（含 SSR）固定用默认源，挂载后再读 localStorage/服务端，避免 hydration 不匹配
+  const [activeSource, setActiveSourceState] = useState<ApiSource>(DEFAULT_SOURCE);
   const [categories, setCategories] = useState<CategoryTreeNode[]>([]);
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
   const mountedRef = useRef(false);
@@ -83,7 +83,10 @@ export function SourceProvider({ children }: { children: ReactNode }) {
       const storedSources = sourceStorage.getSources();
       if (mountedRef.current) setSources(storedSources);
       const activeId = sourceStorage.getActiveSourceId();
-      const active = storedSources.find((s) => s.id === activeId);
+      const active =
+        storedSources.find((s) => s.id === activeId) ??
+        storedSources.find((s) => s.enabled) ??
+        storedSources[0];
       if (active && mountedRef.current) setActiveSourceState(active);
     })();
 
@@ -132,6 +135,21 @@ export function SourceProvider({ children }: { children: ReactNode }) {
       const updated = sourceStorage.getSources();
       setSources(updated);
       syncToServer(updated, sourceStorage.getActiveSourceId());
+    },
+    []
+  );
+
+  const updateSource = useCallback(
+    (id: string, patch: { name?: string; url?: string; enabled?: boolean }) => {
+      const updated = sourceStorage.updateSource(id, patch);
+      if (!updated) return;
+      const allSources = sourceStorage.getSources();
+      setSources(allSources);
+      // 编辑的是当前激活源时，同步刷新激活源对象（id 不变）
+      if (sourceStorage.getActiveSourceId() === id) {
+        setActiveSourceState(updated);
+      }
+      syncToServer(allSources, sourceStorage.getActiveSourceId());
     },
     []
   );
@@ -186,6 +204,7 @@ export function SourceProvider({ children }: { children: ReactNode }) {
         apiService: apiService,
         categories,
         addSource,
+        updateSource,
         removeSource,
         reorderSource,
         toggleSource,

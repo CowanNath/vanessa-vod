@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "../components/layout/Header";
 import { Sidebar, MobileSidebar } from "../components/layout/Sidebar";
 import { SourceSelector } from "../components/home/SourceSelector";
@@ -17,10 +17,13 @@ export default function HomePage() {
   const { videos, totalPages, currentPage, isLoading, error, setPage } =
     useVodApi({ typeId: selectedTypeId });
 
-  // 源切换时重置分类选择
-  useEffect(() => {
+  // 源切换时在渲染期重置分类选择：这样 useVodApi 的请求 effect 只会以
+  // 「新源 + 已重置的分类」组合触发一次，而不是先用旧分类请求一次再重置再请求一次
+  const [prevSourceId, setPrevSourceId] = useState(activeSource.id);
+  if (prevSourceId !== activeSource.id) {
+    setPrevSourceId(activeSource.id);
     setSelectedTypeId(undefined);
-  }, [activeSource.id]);
+  }
 
   const handleSelectType = (id: number | undefined) => {
     setSelectedTypeId(id);

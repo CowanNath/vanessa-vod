@@ -1,7 +1,7 @@
 import type { VodListResponse, CategoryItem, VodItem } from "../lib/types";
 
 // Proxy responses may include { error: "..." } on failure
-interface ProxyResponse<T = unknown> {
+interface ProxyResponse {
   error?: string;
   detail?: string;
 }

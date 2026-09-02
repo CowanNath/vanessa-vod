@@ -15,7 +15,7 @@ export function SourceSettingsModal({
   isOpen,
   onClose,
 }: SourceSettingsModalProps) {
-  const { sources, activeSource, addSource, removeSource, reorderSource, toggleSource, setActiveSource } =
+  const { sources, activeSource, addSource, updateSource, removeSource, reorderSource, toggleSource, setActiveSource } =
     useSource();
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -64,26 +64,8 @@ export function SourceSettingsModal({
     }
 
     if (editingId) {
-      // Update existing source
-      const updated = sources.map((s) =>
-        s.id === editingId
-          ? { ...s, name: newName.trim(), url: newUrl.trim() }
-          : s
-      );
-      // Save directly to localStorage
-      localStorage.setItem("video-app-sources", JSON.stringify(updated));
-      // Force re-render through remove + re-add pattern
-      removeSource(editingId);
-      addSource({
-        name: newName.trim(),
-        url: newUrl.trim(),
-        enabled: sources.find((s) => s.id === editingId)?.enabled ?? true,
-      });
-      // Set active if the edited source was active
-      if (editingId === activeSource.id) {
-        // find the source again (it has a new ID now from addSource)
-        // Actually we need a different approach
-      }
+      // 原地更新，保留源的 ID 和在列表中的位置
+      updateSource(editingId, { name: newName.trim(), url: newUrl.trim() });
       resetForm();
     } else {
       addSource({

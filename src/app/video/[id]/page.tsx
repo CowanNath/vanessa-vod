@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import DOMPurify from "dompurify";
 import { ArrowLeft } from "lucide-react";
@@ -21,6 +21,7 @@ import { Skeleton } from "../../../components/ui/Skeleton";
 export default function VideoDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const vodId = Number(params.id);
   const sourceId = searchParams.get("source");
   const { apiService, activeSource, sources: apiSources } = useSource();
@@ -28,12 +29,21 @@ export default function VideoDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUrl, setCurrentUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // 已尝试且失败的播放地址，防止两条坏线路之间无限乒乓切换
+  const triedUrlsRef = useRef<Set<string>>(new Set());
 
-  // 自动切换源的逻辑
-  const handlePlayerError = () => {
+  // 用户主动选集：重置失败记录
+  const selectEpisode = useCallback((url: string) => {
+    triedUrlsRef.current = new Set([url]);
+    setCurrentUrl(url);
+  }, []);
+
+  // 自动切换线路的逻辑
+  const handlePlayerError = useCallback(() => {
     if (!video || !currentUrl) return;
+    triedUrlsRef.current.add(currentUrl);
     const allSources = parsePlaySources(video.vod_play_from, video.vod_play_url);
-    
+
     // 寻找当前剧集的名称
     let currentEpName = "";
     for (const s of allSources) {
@@ -46,16 +56,47 @@ export default function VideoDetailPage() {
 
     if (!currentEpName) return;
 
-    // 寻找其他线路中同一集的地址
+    // 寻找其他线路中同一集、且没试过的地址
     for (const s of allSources) {
-      const nextEp = s.episodes.find(e => e.name === currentEpName && e.url !== currentUrl);
+      const nextEp = s.episodes.find(
+        (e) => e.name === currentEpName && e.url !== currentUrl && !triedUrlsRef.current.has(e.url)
+      );
       if (nextEp) {
         console.warn(`[播放纠错] 当前线路失败，自动切至: ${s.sourceName}`);
         setCurrentUrl(nextEp.url);
         return;
       }
     }
-  };
+    console.error("[播放纠错] 所有线路均播放失败");
+  }, [video, currentUrl]);
+
+  // 上报观看历史：详情加载完成以及每次切换剧集时（服务端同视频同源只保留最新一条）
+  useEffect(() => {
+    if (!video || !currentUrl) return;
+    const targetSource = sourceId ? apiSources.find((s) => s.id === sourceId) : null;
+    const playSources = parsePlaySources(video.vod_play_from, video.vod_play_url);
+    let episodeName = "";
+    for (const s of playSources) {
+      const ep = s.episodes.find((e) => e.url === currentUrl);
+      if (ep) {
+        episodeName = ep.name;
+        break;
+      }
+    }
+    fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vodId: video.vod_id,
+        vodName: video.vod_name,
+        vodPic: video.vod_pic,
+        typeName: video.type_name,
+        sourceId: targetSource?.id ?? activeSource.id,
+        sourceUrl: targetSource?.url ?? activeSource.url,
+        episodeName: episodeName || "正片",
+      }),
+    }).catch(() => {});
+  }, [video, currentUrl, sourceId, apiSources, activeSource]);
 
   useEffect(() => {
     if (!vodId) return;
@@ -91,13 +132,13 @@ export default function VideoDetailPage() {
             if (!bestUrl && allSources[0].episodes.length > 0) {
               bestUrl = allSources[0].episodes[0].url;
             }
-            if (bestUrl) setCurrentUrl(bestUrl);
+            if (bestUrl) selectEpisode(bestUrl);
           }
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, [vodId, apiService]);
+  }, [vodId, apiService, selectEpisode]);
 
   if (isLoading) {
     return (
@@ -158,7 +199,16 @@ export default function VideoDetailPage() {
   const handleNextEpisode = () => {
     if (!currentEpisode) return;
     const nextEp = currentEpisode.source.episodes[currentEpisode.index + 1];
-    if (nextEp) setCurrentUrl(nextEp.url);
+    if (nextEp) selectEpisode(nextEp.url);
+  };
+
+  // 返回上一页（从收藏/历史/搜索进来就回哪里），没有浏览历史时兜底回首页
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
   };
 
   return (
@@ -166,13 +216,13 @@ export default function VideoDetailPage() {
       <Header />
       <main className="p-2 sm:p-4 max-w-5xl mx-auto w-full space-y-4 sm:space-y-6">
         {/* Back button */}
-        <Link
-          href="/"
+        <button
+          onClick={handleBack}
           className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           返回
-        </Link>
+        </button>
 
         {/* Title + Favorite */}
         <div className="flex items-start justify-between gap-2 sm:gap-4">
@@ -212,7 +262,7 @@ export default function VideoDetailPage() {
           <EpisodeList
             sources={sources}
             currentUrl={currentUrl}
-            onSelectEpisode={setCurrentUrl}
+            onSelectEpisode={selectEpisode}
           />
         )}
 

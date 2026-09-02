@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { VodItem } from "../lib/types";
 import { useSource } from "../providers/SourceProvider";
 
@@ -21,16 +21,19 @@ interface UseVodApiReturn {
 }
 
 export function useVodApi(params: UseVodApiParams = {}): UseVodApiReturn {
-  const { apiService, activeSource } = useSource();
+  const { apiService } = useSource();
   const [videos, setVideos] = useState<VodItem[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 递增序号：响应返回时序号已变化说明是过期请求，直接丢弃
+  const requestSeqRef = useRef(0);
 
   const doFetch = useCallback(
     async (page: number, typeId?: number, keyword?: string) => {
+      const seq = ++requestSeqRef.current;
       setIsLoading(true);
       setError(null);
       try {
@@ -39,13 +42,17 @@ export function useVodApi(params: UseVodApiParams = {}): UseVodApiReturn {
           typeId,
           keyword,
         });
+        if (seq !== requestSeqRef.current) return;
         setVideos(response.list || []);
         setTotalPages(response.pagecount || 0);
         setTotal(response.total || 0);
       } catch (err) {
+        if (seq !== requestSeqRef.current) return;
         setError(err instanceof Error ? err.message : "请求失败");
       } finally {
-        setIsLoading(false);
+        if (seq === requestSeqRef.current) {
+          setIsLoading(false);
+        }
       }
     },
     [apiService]

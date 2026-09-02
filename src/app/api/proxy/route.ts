@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSafePublicUrl } from "../../../lib/security";
 
 const PROXY_TIMEOUT = 15000; // 15 seconds
 
@@ -8,6 +9,9 @@ export async function GET(request: NextRequest) {
 
   if (!sourceUrl) {
     return NextResponse.json({ error: "Missing source parameter" }, { status: 400 });
+  }
+  if (!isSafePublicUrl(sourceUrl)) {
+    return NextResponse.json({ error: "不允许的地址" }, { status: 400 });
   }
 
   const proxyUrl = new URL(sourceUrl);

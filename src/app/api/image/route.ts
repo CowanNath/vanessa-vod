@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSafePublicUrl } from "../../../lib/security";
 
 const IMAGE_TIMEOUT = 8000;
 const CONTENT_TYPE_MAP: Record<string, string> = {
@@ -24,6 +25,9 @@ export async function GET(request: NextRequest) {
 
   if (!imageUrl) {
     return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
+  }
+  if (!isSafePublicUrl(imageUrl)) {
+    return NextResponse.json({ error: "不允许的地址" }, { status: 400 });
   }
 
   try {

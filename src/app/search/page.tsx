@@ -1,9 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { Header } from "../../components/layout/Header";
-import { VideoGrid } from "../../components/home/VideoGrid";
 import { SearchVideoGrid } from "../../components/search/SearchVideoGrid";
 import { Pagination } from "../../components/home/Pagination";
 import { VideoGridSkeleton } from "../../components/ui/Skeleton";
@@ -36,9 +35,12 @@ function SearchResults() {
   const [results, setResults] = useState<Map<string, SourceSearchResult>>(
     new Map()
   );
+  // 请求纪元：关键词变化或发起新请求时递增，过期响应直接丢弃
+  const epochRef = useRef(0);
 
   // 切换关键词时重置
   useEffect(() => {
+    epochRef.current++;
     if (!keyword) {
       setResults(new Map());
       setActiveTab("");
@@ -66,12 +68,14 @@ function SearchResults() {
   // 对所有源同时发起搜索
   useEffect(() => {
     if (!keyword) return;
+    const epoch = ++epochRef.current;
 
     enabledSources.forEach((source) => {
       const api = new VodApiService(source.url);
       api
         .fetchVideoList({ page: 1, keyword })
         .then((response) => {
+          if (epochRef.current !== epoch) return;
           setResults((prev) => {
             const next = new Map(prev);
             next.set(source.id, {
@@ -88,6 +92,7 @@ function SearchResults() {
           });
         })
         .catch((err) => {
+          if (epochRef.current !== epoch) return;
           setResults((prev) => {
             const next = new Map(prev);
             next.set(source.id, {
@@ -123,9 +128,11 @@ function SearchResults() {
       });
 
       const api = new VodApiService(source.url);
+      const epoch = ++epochRef.current;
       api
         .fetchVideoList({ page, keyword })
         .then((response) => {
+          if (epochRef.current !== epoch) return;
           setResults((prev) => {
             const next = new Map(prev);
             next.set(activeTab, {
@@ -142,6 +149,7 @@ function SearchResults() {
           });
         })
         .catch((err) => {
+          if (epochRef.current !== epoch) return;
           setResults((prev) => {
             const next = new Map(prev);
             next.set(activeTab, {

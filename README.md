@@ -5,12 +5,14 @@
 ## 功能
 
 - 多视频源聚合浏览与切换
-- HLS (m3u8) 在线播放
+- HLS (m3u8) 在线播放，mp4 直链原生播放（支持 seek）
+- m3u8 播放列表代理改写，基于域名投票自动剔除插入式广告分段
 - FFmpeg 后端下载，支持代理、断线重连
 - 实时下载进度（SSE 推送）
+- 下载任务面板：进行中任务进度/取消 + 历史记录，关页面后下载不中断
 - 多集批量下载
-- 收藏夹（本地存储）
-- 搜索
+- 收藏夹、观看历史（服务端存储，多设备共享）
+- 搜索（多源并行）
 - 深色/浅色主题
 - Docker 一键部署
 
@@ -31,6 +33,7 @@
 | `DOWNLOAD_PROXY` | 下载代理地址 | 无 |
 | `HTTP_PROXY` | 通用 HTTP 代理（备选） | 无 |
 | `HTTPS_PROXY` | 通用 HTTPS 代理（备选） | 无 |
+| `AD_FILTER` | 设为 `off` 关闭 m3u8 广告分段过滤 | 开启 |
 
 ## Docker 部署
 
@@ -133,16 +136,20 @@ npm run dev
 src/
 ├── app/
 │   ├── api/
-│   │   ├── download/    # FFmpeg 下载接口 (SSE 进度推送)
+│   │   ├── download/    # FFmpeg 下载接口 (SSE 进度推送 + 任务列表)
+│   │   ├── favorites/   # 收藏
+│   │   ├── history/     # 观看历史
 │   │   ├── image/       # 图片代理
 │   │   ├── proxy/       # API 代理
-│   │   └── stream/      # 视频流代理
+│   │   ├── sources/     # 视频源配置
+│   │   └── stream/      # 视频流代理 (m3u8 改写 + 广告分段过滤 + Range 透传)
 │   ├── favorites/       # 收藏页
+│   ├── history/         # 观看历史页
 │   ├── search/          # 搜索页
 │   └── video/[id]/      # 视频详情页
 ├── components/          # UI 组件
 ├── hooks/               # 自定义 Hooks
-├── lib/                 # 类型定义、常量、工具
+├── lib/                 # 类型定义、常量、m3u8 改写、工具
 ├── providers/           # Context Providers
 └── services/            # 业务逻辑（API、存储）
 ```
@@ -151,6 +158,7 @@ src/
 
 下载功能基于 FFmpeg，支持以下特性：
 
+- 下载同样去广告：先经本地净化端点（选最高码率 + 域名投票剔除广告分段）再交给 FFmpeg，失败自动回退原始地址
 - 自动携带 User-Agent 和 Referer
 - HTTP 代理支持（通过 `DOWNLOAD_PROXY` 环境变量）
 - 断线自动重连（最大延迟 5 秒）

@@ -1,4 +1,5 @@
 import type { ApiSource } from "../lib/types";
+import { DEFAULT_SOURCE, STORAGE_KEYS } from "../lib/constants";
 
 function generateId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -6,7 +7,6 @@ function generateId(): string {
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
-import { DEFAULT_SOURCE, STORAGE_KEYS } from "../lib/constants";
 
 export const sourceStorage = {
   getSources(): ApiSource[] {
@@ -38,6 +38,18 @@ export const sourceStorage = {
   removeSource(id: string): void {
     const sources = this.getSources().filter((s) => s.id !== id);
     this.saveSources(sources);
+  },
+
+  updateSource(
+    id: string,
+    patch: Partial<Pick<ApiSource, "name" | "url" | "enabled">>
+  ): ApiSource | null {
+    const sources = this.getSources();
+    const index = sources.findIndex((s) => s.id === id);
+    if (index === -1) return null;
+    sources[index] = { ...sources[index], ...patch };
+    this.saveSources(sources);
+    return sources[index];
   },
 
   toggleSource(id: string): void {

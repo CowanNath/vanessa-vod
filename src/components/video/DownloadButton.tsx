@@ -15,11 +15,11 @@ export function DownloadButton({ videoName, sources }: DownloadButtonProps) {
   const abortRef = useRef<AbortController | null>(null);
   const downloadIdRef = useRef("");
 
-  const downloadEpisode = async (url: string, name: string, signal: AbortSignal): Promise<boolean> => {
+  const downloadEpisode = async (url: string, name: string, downloadId: string, signal: AbortSignal): Promise<boolean> => {
     const res = await fetch("/api/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, fileName: name, downloadId: downloadIdRef.current }),
+      body: JSON.stringify({ url, fileName: name, downloadId }),
       signal,
     });
 
@@ -64,25 +64,29 @@ export function DownloadButton({ videoName, sources }: DownloadButtonProps) {
     setProgress("准备中...");
     const abort = new AbortController();
     abortRef.current = abort;
-    downloadIdRef.current = `dl_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
     try {
       const source = sources[0];
       const total = source.episodes.length;
+      // 每集独立 ID：服务端任务面板才能按集展示与取消
+      const batchId = `dl_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
       if (total === 1) {
         const ep = source.episodes[0];
-        await downloadEpisode(ep.url, `${videoName} - ${ep.name}`, abort.signal);
+        downloadIdRef.current = `${batchId}_0`;
+        await downloadEpisode(ep.url, `${videoName} - ${ep.name}`, downloadIdRef.current, abort.signal);
         setProgress("下载完成");
       } else {
         let success = 0;
         for (let i = 0; i < source.episodes.length; i++) {
           const ep = source.episodes[i];
+          downloadIdRef.current = `${batchId}_${i}`;
           setProgress(`[${i + 1}/${total}] ${ep.name}: 准备中...`);
           try {
-            await downloadEpisode(ep.url, `${videoName} - ${ep.name}`, abort.signal);
+            await downloadEpisode(ep.url, `${videoName} - ${ep.name}`, downloadIdRef.current, abort.signal);
             success++;
-          } catch (err) {
+          } catch {
+            // 单集失败继续下一集，最后汇总
           }
         }
         setProgress(`下载完成 ${success}/${total} 集`);

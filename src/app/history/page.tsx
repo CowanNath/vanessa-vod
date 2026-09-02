@@ -2,35 +2,87 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
 import { Header } from "../../components/layout/Header";
 import { ImageWithFallback } from "../../components/ui/ImageWithFallback";
-import { favoriteStorage, type FavoriteItem } from "../../services/favorite-storage";
 import { imageProxy } from "../../lib/utils";
 
-export default function FavoritesPage() {
-  const [items, setItems] = useState<FavoriteItem[]>([]);
+interface HistoryItem {
+  vodId: number;
+  vodName: string;
+  vodPic: string;
+  typeName: string;
+  sourceId: string;
+  sourceUrl: string;
+  episodeName: string;
+  watchedAt: string;
+}
+
+function formatWatchedAt(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+export default function HistoryPage() {
+  const [items, setItems] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
-    favoriteStorage.loadFromServer().then(() => {
-      setItems(favoriteStorage.getAll());
-    });
+    fetch("/api/history")
+      .then((r) => r.json())
+      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
 
-  const handleRemove = (vodId: number, sourceId: string) => {
-    favoriteStorage.remove(vodId, sourceId);
-    setItems(favoriteStorage.getAll());
+  const handleRemove = async (vodId: number, sourceId: string) => {
+    setItems((prev) => prev.filter((h) => !(h.vodId === vodId && h.sourceId === sourceId)));
+    try {
+      await fetch("/api/history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vodId, sourceId }),
+      });
+    } catch {}
+  };
+
+  const handleClearAll = async () => {
+    setItems([]);
+    try {
+      await fetch("/api/history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+    } catch {}
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="p-2 sm:p-4 max-w-7xl mx-auto w-full">
-        <h1 className="text-lg font-semibold mb-4">我的收藏</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-lg font-semibold">观看历史</h1>
+          {items.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[var(--color-text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              清空历史
+            </button>
+          )}
+        </div>
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[var(--color-text-secondary)]">
-            <Heart className="w-12 h-12 mb-3 opacity-30" />
-            <p>暂无收藏</p>
+            <History className="w-12 h-12 mb-3 opacity-30" />
+            <p>暂无观看记录</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -54,12 +106,12 @@ export default function FavoritesPage() {
                     )}
                   </div>
                 </Link>
-                {/* Remove button */}
                 <button
                   onClick={() => handleRemove(item.vodId, item.sourceId)}
-                  className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-red-500 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  title="删除该记录"
+                  className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/40 backdrop-blur-sm text-[var(--color-text-secondary)] hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                 >
-                  <Heart className="w-3.5 h-3.5 fill-red-500" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
                 <div className="mt-2 px-0.5">
                   <Link href={`/video/${item.vodId}?source=${item.sourceId}`}>
@@ -68,7 +120,7 @@ export default function FavoritesPage() {
                     </h3>
                   </Link>
                   <p className="text-xs text-[var(--color-text-secondary)] truncate mt-0.5">
-                    {item.typeName}
+                    {item.episodeName} · {formatWatchedAt(item.watchedAt)}
                   </p>
                 </div>
               </div>

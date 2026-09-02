@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Settings, Menu, Film, Heart } from "lucide-react";
+import Link from "next/link";
+import { Search, Settings, Menu, Film, Heart, History, Download } from "lucide-react";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { SourceSettingsModal } from "../settings/SourceSettingsModal";
+import { DownloadsPanel } from "../download/DownloadsPanel";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
 export function Header({ onToggleSidebar }: HeaderProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // 搜索页刷新/返回时回填当前关键词（SSR 首帧为空，用 suppressHydrationWarning 兜住差异）
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("q") ?? "";
+    }
+    return "";
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -49,12 +58,27 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索影片..."
+                suppressHydrationWarning
                 className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-1 sm:py-1.5 rounded-full bg-[var(--color-bg-secondary)] text-xs sm:text-sm placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
           </form>
 
           <div className="flex items-center gap-0 sm:gap-1 shrink-0">
+            <button
+              onClick={() => setIsDownloadsOpen(true)}
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
+              title="下载任务"
+            >
+              <Download className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            </button>
+            <Link
+              href="/history"
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
+              title="观看历史"
+            >
+              <History className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            </Link>
             <button
               onClick={() => router.push("/favorites")}
               className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
@@ -77,6 +101,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
       <SourceSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <DownloadsPanel
+        isOpen={isDownloadsOpen}
+        onClose={() => setIsDownloadsOpen(false)}
       />
     </>
   );
