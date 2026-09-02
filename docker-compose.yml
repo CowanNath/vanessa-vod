@@ -5,7 +5,9 @@ services:
     init: true
     ports:
       - "8608:8608"
+    environment:
+      - DATA_DIR=/app/downloads/.appdata
     volumes:
-      - ./downloads:/app/downloads
-      - ./data:/app/data
+      - "/vol00/WDC WD20SDZW-11Z3CS0_1/vod_downloads:/app/downloads"
+      - ./logs:/app/logs
     restart: unless-stopped
