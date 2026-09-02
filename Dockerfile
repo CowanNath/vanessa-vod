@@ -21,11 +21,13 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-RUN mkdir -p /app/downloads /app/data /app/logs && chown nextjs:nodejs /app/downloads /app/data /app/logs
+RUN mkdir -p /app/downloads /app/data && chown nextjs:nodejs /app/downloads /app/data
 
 USER nextjs
 EXPOSE 8608
 ENV PORT=8608
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node server.js 2>&1 | tee -a /app/logs/app.log"]
+# node 直接作为 PID 1，保证 docker stop 的 SIGTERM 能触发优雅退出；
+# 日志统一走 stdout，用 docker logs 查看
+CMD ["node", "server.js"]

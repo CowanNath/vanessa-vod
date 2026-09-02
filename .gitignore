@@ -39,8 +39,11 @@ yarn-error.log*
 # downloads
 /downloads/
 
+# server-side json storage (favorites/sources)
+/data/
+
 # logs
-/Logs/
+/logs/
 
 # executables
 *.exe

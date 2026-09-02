@@ -2,10 +2,10 @@ services:
   vanessa-vod:
     build: .
     container_name: vanessa-vod
+    init: true
     ports:
       - "8608:8608"
     volumes:
       - ./downloads:/app/downloads
       - ./data:/app/data
-      - ./logs:/app/logs
     restart: unless-stopped
