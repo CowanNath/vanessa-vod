@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { dataDir, ensureDataDir } from "../../../lib/storage-paths";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const HISTORY_FILE = path.join(DATA_DIR, "history.json");
+const HISTORY_FILE = path.join(dataDir, "history.json");
 const HISTORY_LIMIT = 200;
 
 export interface HistoryItem {
@@ -15,12 +15,6 @@ export interface HistoryItem {
   sourceUrl: string;
   episodeName: string;
   watchedAt: string;
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
 }
 
 function readHistory(): HistoryItem[] {

@@ -2,19 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { DEFAULT_SOURCE } from "../../../lib/constants";
+import { dataDir, ensureDataDir } from "../../../lib/storage-paths";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const SOURCES_FILE = path.join(DATA_DIR, "sources.json");
+const SOURCES_FILE = path.join(dataDir, "sources.json");
 
 interface SourcesData {
   sources: typeof DEFAULT_SOURCE[];
   activeSourceId: string;
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
 }
 
 function readSources(): SourcesData {

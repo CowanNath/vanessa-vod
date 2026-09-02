@@ -30,10 +30,22 @@
 |---|---|---|
 | `PORT` | 服务端口 | `8608` |
 | `HOSTNAME` | 监听地址 | `0.0.0.0` |
+| `DOWNLOAD_DIR` | 视频保存目录 | `<运行目录>/downloads` |
+| `DATA_DIR` | JSON 数据目录（收藏/源配置/观看历史/下载历史） | `<运行目录>/data` |
 | `DOWNLOAD_PROXY` | 下载代理地址 | 无 |
 | `HTTP_PROXY` | 通用 HTTP 代理（备选） | 无 |
 | `HTTPS_PROXY` | 通用 HTTPS 代理（备选） | 无 |
 | `AD_FILTER` | 设为 `off` 关闭 m3u8 广告分段过滤 | 开启 |
+
+### NAS 部署注意（数据目录权限）
+
+Docker 容器以非 root 用户（uid 1001）运行。如果收藏/源配置/下载历史报 `EACCES: permission denied` 或历史记录为空，说明挂载的 data 目录对容器用户只读，任选其一修复：
+
+1. **推荐**：添加环境变量 `DATA_DIR`，指向一个可写目录（如下载盘挂载路径下的子目录 `/app/downloads/.appdata`，数据随外接盘持久化）
+2. 在 NAS 文件管理中给 data 目录开放"所有人可写"，或 SSH 执行 `chmod -R 777 <data 目录>`
+3. 部署时将容器运行用户改为 root（`user: "0:0"`）
+
+具体哪个目录写入失败，看 `docker logs` 中的 `[storage]` / `[download]` 报错即可。
 
 ## Docker 部署
 

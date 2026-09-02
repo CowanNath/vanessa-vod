@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { dataDir, ensureDataDir } from "../../../lib/storage-paths";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const FAVORITES_FILE = path.join(DATA_DIR, "favorites.json");
+const FAVORITES_FILE = path.join(dataDir, "favorites.json");
 
 export interface FavoriteItem {
   vodId: number;
@@ -13,12 +13,6 @@ export interface FavoriteItem {
   sourceId: string;
   sourceUrl: string;
   addedAt: string;
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
 }
 
 function readFavorites(): FavoriteItem[] {

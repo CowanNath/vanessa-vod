@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { isSafePublicUrl } from "../../../lib/security";
 import { buildFilteredPlaylist } from "../../../lib/filtered-playlist";
+import { dataDir, downloadsDir, ensureDataDir } from "../../../lib/storage-paths";
 
 const DL_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -25,8 +26,7 @@ interface DownloadHistoryEntry {
   finishedAt: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const HISTORY_FILE = path.join(DATA_DIR, "downloads.json");
+const HISTORY_FILE = path.join(dataDir, "downloads.json");
 const HISTORY_LIMIT = 200;
 
 function getActiveDownloads(): Map<string, ActiveDownload> {
@@ -49,11 +49,14 @@ function readHistory(): DownloadHistoryEntry[] {
 
 function appendHistory(entry: DownloadHistoryEntry) {
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    ensureDataDir();
     const items = readHistory();
     items.unshift(entry);
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(items.slice(0, HISTORY_LIMIT), null, 2), "utf-8");
-  } catch {}
+  } catch (err) {
+    // 数据目录不可写时历史会"消失"，必须把原因打进日志而不是静默吞掉
+    console.error(`[download] 下载历史写入失败（数据目录: ${dataDir}）:`, (err as Error).message);
+  }
 }
 
 function cleanupFiles(safeName: string, dirs: string[]) {
@@ -135,7 +138,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const safeName = fileName.replace(/[<>:"/\\|?*]/g, "_");
-  const saveDir = path.join(process.cwd(), "downloads");
+  const saveDir = downloadsDir;
   if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir, { recursive: true });
   const outputPath = path.join(saveDir, `${safeName}.mp4`);
 
